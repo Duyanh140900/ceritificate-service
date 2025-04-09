@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const cors = require("cors");
 require("dotenv").config();
 
 // Import routes
@@ -9,6 +10,16 @@ const authRoutes = require("./routes/auth.route");
 
 // Khởi tạo app
 const app = express();
+
+// CORS middleware
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(express.json());
