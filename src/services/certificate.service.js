@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const Certificate = require("../models/certificate.model");
-const { generateCertificatePDF } = require("../utils/pdfGenerator");
+const { generateCertificateImage } = require("../utils/canvasGenerator");
 const {
   generateCertificateId,
   getCertificateFilePath,
@@ -22,7 +22,10 @@ const createCertificate = async (certificateData) => {
     }
 
     // Tạo đường dẫn file
-    const filePath = getCertificateFilePath(certificateData.certificateId);
+    const filePath = getCertificateFilePath(
+      certificateData.certificateId,
+      "png"
+    );
     certificateData.filePath = filePath;
 
     // Lấy template
@@ -30,16 +33,60 @@ const createCertificate = async (certificateData) => {
       ? await templateService.getTemplateById(certificateData.template)
       : await templateService.getDefaultTemplate();
 
-    // Chuẩn bị dữ liệu cho PDF
-    const pdfData = {
-      ...certificateData.fieldValues,
-      studentName: certificateData.studentName,
-      courseName: certificateData.courseName,
-      issueDate: certificateData.issueDate,
-    };
+    // Ghi log để debug
+    console.log("Template được sử dụng:", template.name);
+    console.log("fieldValues ban đầu:", certificateData.fieldValues);
 
-    // Tạo PDF
-    await generateCertificatePDF(template, pdfData, path.resolve(filePath));
+    // Đảm bảo fieldValues tồn tại
+    if (!certificateData.fieldValues) {
+      certificateData.fieldValues = {};
+    }
+
+    // Thu thập tất cả các trường có trong template
+    const templateFields = template.fields.map((field) => field.name);
+    console.log("Các trường trong template:", templateFields);
+
+    // Đảm bảo có các trường dữ liệu cơ bản
+    if (
+      !certificateData.fieldValues.studentName &&
+      certificateData.studentName
+    ) {
+      certificateData.fieldValues.studentName = certificateData.studentName;
+    }
+
+    if (!certificateData.fieldValues.courseName && certificateData.courseName) {
+      certificateData.fieldValues.courseName = certificateData.courseName;
+    }
+
+    // Định dạng ngày cấp nếu cần
+    if (!certificateData.fieldValues.issueDate && certificateData.issueDate) {
+      certificateData.fieldValues.issueDate = new Date(
+        certificateData.issueDate
+      ).toLocaleDateString("vi-VN");
+    }
+
+    // Thêm các trường khác từ data vào fieldValues
+    for (const key in certificateData) {
+      if (
+        key !== "fieldValues" &&
+        templateFields.includes(key) &&
+        !certificateData.fieldValues[key]
+      ) {
+        certificateData.fieldValues[key] = certificateData[key];
+      }
+    }
+
+    // Đảm bảo certificateId luôn có trong fieldValues
+    certificateData.fieldValues.certificateId = certificateData.certificateId;
+
+    console.log("fieldValues đã cập nhật:", certificateData.fieldValues);
+
+    // Tạo ảnh chứng chỉ
+    await generateCertificateImage(
+      template,
+      certificateData,
+      path.resolve(filePath)
+    );
 
     // Lưu chứng chỉ vào database
     certificateData.template = template._id;
@@ -56,7 +103,7 @@ const createCertificate = async (certificateData) => {
     // Xóa file nếu có lỗi
     const filePath =
       certificateData.filePath ||
-      getCertificateFilePath(certificateData.certificateId);
+      getCertificateFilePath(certificateData.certificateId, "png");
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

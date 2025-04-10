@@ -7,7 +7,7 @@ const { authenticate, authorize } = require("../middleware");
 router
   .route("/")
   .get(authenticate, templateController.getAllTemplates)
-  .post(authenticate, authorize("admin"), templateController.createTemplate);
+  .post(authenticate, templateController.createTemplate);
 
 // Route: /api/templates/default
 router.get("/default", templateController.getDefaultTemplate);
@@ -16,7 +16,7 @@ router.get("/default", templateController.getDefaultTemplate);
 router
   .route("/:id")
   .get(authenticate, templateController.getTemplateById)
-  .put(authenticate, authorize("admin"), templateController.updateTemplate)
-  .delete(authenticate, authorize("admin"), templateController.deleteTemplate);
+  .put(authenticate, templateController.updateTemplate)
+  .delete(authenticate, templateController.deleteTemplate);
 
 module.exports = router;

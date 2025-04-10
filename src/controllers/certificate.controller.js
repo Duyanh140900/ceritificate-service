@@ -1,6 +1,12 @@
 const path = require("path");
 const fs = require("fs");
 const certificateService = require("../services/certificate.service");
+const templateService = require("../services/template.service");
+const { generateCertificateImage } = require("../utils/canvasGenerator");
+const {
+  generateCertificateId,
+  getCertificateFilePath,
+} = require("../utils/helpers");
 
 /**
  * Lấy danh sách chứng chỉ
@@ -188,6 +194,70 @@ const previewCertificate = async (req, res) => {
   }
 };
 
+/**
+ * Tạo và xem trước chứng chỉ từ template và dữ liệu trường
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const generatePreview = async (req, res) => {
+  try {
+    const { templateId, fieldValues } = req.body;
+
+    if (!templateId) {
+      throw new Error("Thiếu thông tin template");
+    }
+
+    // Lấy template
+    const template = await templateService.getTemplateById(templateId);
+    if (!template) {
+      throw new Error("Template không tồn tại");
+    }
+
+    // Tạo ID tạm thời cho file preview
+    const previewId = `preview-${generateCertificateId("PREV")}`;
+    const outputPath = path.resolve(
+      `${process.env.UPLOAD_DIR}/previews/${previewId}.png`
+    );
+
+    // Đảm bảo thư mục tồn tại
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Tạo dữ liệu chứng chỉ tạm thời
+    const certificateData = {
+      certificateId: previewId,
+      fieldValues: fieldValues || {},
+    };
+
+    // Tạo ảnh chứng chỉ
+    await generateCertificateImage(template, certificateData, outputPath);
+
+    // Xác định loại MIME dựa trên phần mở rộng
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", `inline; filename="${previewId}.png"`);
+
+    // Trả về ảnh
+    const fileStream = fs.createReadStream(outputPath);
+    fileStream.pipe(res);
+
+    // Thiết lập hàm xóa file sau 5 phút
+    setTimeout(() => {
+      if (fs.existsSync(outputPath)) {
+        fs.unlink(outputPath, (err) => {
+          if (err) console.error(`Không thể xóa file preview: ${err.message}`);
+        });
+      }
+    }, 5 * 60 * 1000); // 5 phút
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getCertificates,
   getCertificateById,
@@ -196,4 +266,5 @@ module.exports = {
   revokeCertificate,
   downloadCertificate,
   previewCertificate,
+  generatePreview,
 };

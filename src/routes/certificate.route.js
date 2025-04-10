@@ -7,11 +7,7 @@ const { authenticate, authorize, checkOwnership } = require("../middleware");
 router
   .route("/")
   .get(authenticate, certificateController.getCertificates)
-  .post(
-    authenticate,
-    authorize("admin", "instructor"),
-    certificateController.createCertificate
-  );
+  .post(authenticate, certificateController.createCertificate);
 
 // Route: /api/certificates/:id
 router
@@ -29,6 +25,9 @@ router.get("/:id/download", certificateController.downloadCertificate);
 
 // Route: /api/certificates/:id/preview
 router.get("/:id/preview", certificateController.previewCertificate);
+
+// Route: /api/certificates/generate-preview - Tạo và xem trước chứng chỉ
+router.post("/generate-preview", certificateController.generatePreview);
 
 // Route: /api/certificates/:id/revoke
 router.put(

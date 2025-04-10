@@ -42,12 +42,13 @@ const generateCertificateId = (prefix = "CERT") => {
 };
 
 /**
- * Lấy đường dẫn tương đối cho file PDF
+ * Lấy đường dẫn tương đối cho file chứng chỉ
  * @param {string} certificateId - ID chứng chỉ
- * @returns {string} - Đường dẫn tương đối cho file PDF
+ * @param {string} fileType - Loại file (mặc định: 'pdf')
+ * @returns {string} - Đường dẫn tương đối cho file chứng chỉ
  */
-const getCertificateFilePath = (certificateId) => {
-  return `${process.env.UPLOAD_DIR}/${certificateId}.pdf`;
+const getCertificateFilePath = (certificateId, fileType = "pdf") => {
+  return `${process.env.UPLOAD_DIR}/${certificateId}.${fileType}`;
 };
 
 module.exports = {

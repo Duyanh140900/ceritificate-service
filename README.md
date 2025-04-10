@@ -1,35 +1,24 @@
-# Service Quản lý Chứng chỉ
+# Certificate Service
 
-Dịch vụ quản lý và tạo chứng chỉ, cho phép tích hợp với các hệ thống khác thông qua Kafka.
+Dịch vụ quản lý chứng chỉ cho hệ thống đào tạo, cho phép tạo và xác minh chứng chỉ điện tử.
 
-## Tính năng chính
+## Chức năng chính
 
-- Quản lý template chứng chỉ (CRUD)
-- Tự động tạo chứng chỉ từ sự kiện hoàn thành khóa học
-- Tạo chứng chỉ thủ công
-- Xem trước và tải xuống chứng chỉ
-- Thu hồi chứng chỉ
-- Xác thực và phân quyền người dùng sử dụng token từ service login riêng
-
-## Công nghệ sử dụng
-
-- Node.js
-- Express
-- MongoDB
-- Kafka
-- PDFKit (tạo file PDF)
-- JWT (JSON Web Token)
+- Quản lý template chứng chỉ
+- Tạo chứng chỉ từ template
+- Xác minh chứng chỉ
+- Xem trước chứng chỉ
+- Xuất ảnh và PDF chứng chỉ
 
 ## Cài đặt
 
-### Điều kiện tiên quyết
+### Yêu cầu hệ thống
 
-- Node.js (v14+)
+- Node.js (phiên bản >= 18)
 - MongoDB
-- Kafka
-- Service login riêng (cung cấp JWT token)
+- Kafka (tùy chọn, cho phần xử lý sự kiện)
 
-### Cài đặt các gói phụ thuộc
+### Cài đặt thư viện
 
 ```bash
 npm install
@@ -37,108 +26,113 @@ npm install
 
 ### Biến môi trường
 
-Tạo file `.env` trong thư mục gốc với các biến sau:
+Tạo file `.env` với các biến:
 
 ```
-# Server Config
-PORT=3000
-NODE_ENV=development
-
-# MongoDB Config
+PORT=3001
 MONGODB_URI=mongodb://localhost:27017/certificate-service
-
-# Kafka Config
-KAFKA_BROKER=localhost:9092
-KAFKA_CLIENT_ID=certificate-service
-KAFKA_GROUP_ID=certificate-service-group
-
-# Upload Directory
+JWT_SECRET=your_jwt_secret
 UPLOAD_DIR=uploads
-
-# JWT Config
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRES_IN=1d
-
-# Authentication Service Config
-AUTH_SERVICE_URL=http://localhost:4000/api/auth
-AUTH_VERIFICATION_METHOD=jwt # 'api' hoặc 'jwt'
+BASE_URL=http://localhost:3001
 ```
 
-**Lưu ý về AUTH_VERIFICATION_METHOD:**
-
-- `jwt`: Sử dụng cùng JWT_SECRET với service login để xác thực token trực tiếp.
-- `api`: Gọi API đến service login để xác thực token.
-
-## Chạy ứng dụng
-
-### Chế độ phát triển
+### Khởi động
 
 ```bash
+# Chế độ phát triển
 npm run dev
-```
 
-### Chế độ sản xuất
-
-```bash
+# Chế độ production
 npm start
 ```
 
-### Chế độ debug
+## Tạo Ảnh Chứng Chỉ
 
-```bash
-npm run debug
-```
+Dịch vụ này cho phép tạo ảnh chứng chỉ dựa trên template và dữ liệu trường. Ảnh chứng chỉ có thể được tùy chỉnh theo yêu cầu.
 
-## Xác thực và Phân quyền
+### API Tạo Chứng Chỉ
 
-Service sử dụng JWT (JSON Web Token) từ service login riêng để xác thực và phân quyền. Các vai trò người dùng:
+1. **Tạo Chứng Chỉ**
 
-- **admin**: Quyền quản trị, có thể truy cập tất cả API
-- **instructor**: Giáo viên, có thể tạo chứng chỉ
-- **student**: Học viên, quyền truy cập hạn chế
+   ```
+   POST /api/certificates
+   ```
 
-### Sử dụng Token
+   Body:
 
-Đối với các API yêu cầu xác thực, token cần được gửi trong header:
+   ```json
+   {
+     "studentId": "SV123",
+     "studentName": "Nguyễn Văn A",
+     "studentEmail": "student@example.com",
+     "courseId": "CS101",
+     "courseName": "Lập Trình Java",
+     "template": "61234567890abcdef1234567", // ID của template (tùy chọn)
+     "fieldValues": {
+       "studentName": "Nguyễn Văn A",
+       "courseName": "Lập Trình Java",
+       "issueDate": "01/08/2023",
+       "validUntil": "01/08/2025"
+     }
+   }
+   ```
 
-```
-Authorization: Bearer <token>
-```
+2. **Xem Trước Chứng Chỉ**
 
-Token này được lấy từ service login riêng.
+   ```
+   POST /api/certificates/generate-preview
+   ```
 
-## API Endpoints
+   Body:
 
-### Auth API
+   ```json
+   {
+     "templateId": "61234567890abcdef1234567",
+     "fieldValues": {
+       "studentName": "Nguyễn Văn A",
+       "courseName": "Lập Trình Java",
+       "issueDate": "01/08/2023",
+       "validUntil": "01/08/2025"
+     }
+   }
+   ```
 
-- `GET /api/auth/me` - Lấy thông tin người dùng (cần xác thực)
+   Response: Trả về hình ảnh chứng chỉ dạng PNG.
 
-### Template API
+3. **Tải Chứng Chỉ**
 
-- `GET /api/templates` - Lấy tất cả templates (cần xác thực)
-- `POST /api/templates` - Tạo template mới (cần xác thực, chỉ admin)
-- `GET /api/templates/default` - Lấy template mặc định
-- `GET /api/templates/:id` - Lấy template theo ID (cần xác thực)
-- `PUT /api/templates/:id` - Cập nhật template (cần xác thực, chỉ admin)
-- `DELETE /api/templates/:id` - Xóa template (cần xác thực, chỉ admin)
+   ```
+   GET /api/certificates/:id/download
+   ```
 
-### Certificate API
+4. **Xem Trước Chứng Chỉ Đã Tạo**
 
-- `GET /api/certificates` - Lấy tất cả chứng chỉ (cần xác thực)
-- `POST /api/certificates` - Tạo chứng chỉ mới (cần xác thực, admin hoặc instructor)
-- `GET /api/certificates/:id` - Lấy chứng chỉ theo ID (cần xác thực)
-- `GET /api/certificates/verify/:certificateId` - Xác thực chứng chỉ (công khai)
-- `GET /api/certificates/:id/download` - Tải xuống chứng chỉ
-- `GET /api/certificates/:id/preview` - Xem trước chứng chỉ
-- `PUT /api/certificates/:id/revoke` - Thu hồi chứng chỉ (cần xác thực, chỉ admin)
+   ```
+   GET /api/certificates/:id/preview
+   ```
 
-## Kafka Integration
+### Các Trường Dữ Liệu Hỗ Trợ
 
-### Consumer Topics
+Dưới đây là các trường dữ liệu có thể được sử dụng trong template:
 
-- `course-completed` - Nhận thông báo khi học viên hoàn thành khóa học
+- `studentName`: Tên học viên
+- `courseName`: Tên khóa học
+- `certificateId`: ID chứng chỉ
+- `issueDate`: Ngày cấp
+- `validUntil`: Ngày hết hạn
+- `instructor`: Tên giảng viên
+- `grade`: Điểm số
+- `achievement`: Thành tích đạt được
 
-### Producer Topics
+## Tính năng nâng cao
 
-- `certificate-generated` - Gửi thông báo khi chứng chỉ được tạo
-- `certificate-revoked` - Gửi thông báo khi chứng chỉ bị thu hồi
+- **Xác minh QR Code**: Mỗi chứng chỉ được tạo ra sẽ có mã QR để xác minh tính xác thực
+- **Tùy chỉnh template**: Cho phép người dùng tạo và tùy chỉnh mẫu chứng chỉ
+- **Hỗ trợ nhiều ngôn ngữ**: Tự động điều chỉnh font chữ và định dạng theo ngôn ngữ
+
+## Liên hệ và hỗ trợ
+
+Nếu cần hỗ trợ, vui lòng liên hệ:
+
+- Email: support@example.com
+- Trang web: https://example.com/support
