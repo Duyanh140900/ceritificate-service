@@ -1,8 +1,17 @@
-const { createCanvas, loadImage, registerFont } = require("canvas");
+const { createCanvas, loadImage, registerFont, Image } = require("canvas");
 const fs = require("fs");
 const path = require("path");
 const { hexToRgb } = require("./helpers");
 const QRCode = require("qrcode");
+const fetch = require("node-fetch");
+
+async function loadImageFromUrl(url) {
+  const res = await fetch(url);
+  const buffer = await res.buffer();
+  const img = new Image();
+  img.src = buffer;
+  return img;
+}
 
 // Đăng ký các font chữ phổ biến nếu có
 try {
@@ -45,7 +54,9 @@ const generateCertificateImage = async (template, data, outputPath) => {
 
     if (template.background) {
       try {
-        backgroundImage = await loadImage(template.background);
+        console.log(`Đang tải background ${template.background}...`);
+
+        backgroundImage = await loadImageFromUrl(template.background);
         // Sử dụng kích thước của ảnh nền làm kích thước canvas
         height = 900 * (backgroundImage.height / backgroundImage.width);
         console.log(`Đã tải background, kích thước: ${width}x${height}`);
