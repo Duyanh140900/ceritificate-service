@@ -8,6 +8,22 @@ const {
   getCertificateFilePath,
 } = require("../utils/helpers");
 
+const testCreateCerrificateByKafka = async (req, res) => {
+  try {
+    // const certificate = await certificateService.createCertificate(req.body);
+    await certificateService.testCreateCerrificateByKafka(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Tạo chứng chỉ thành công.",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 /**
  * Lấy danh sách chứng chỉ
  * @param {Object} req - Express request object
@@ -267,4 +283,5 @@ module.exports = {
   downloadCertificate,
   previewCertificate,
   generatePreview,
+  testCreateCerrificateByKafka,
 };

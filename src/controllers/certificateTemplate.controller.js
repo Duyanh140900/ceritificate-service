@@ -1,4 +1,46 @@
 const templateService = require("../services/template.service");
+const fs = require("fs");
+const path = require("path");
+const fontkit = require("fontkit");
+
+const getAvailableFonts = async (req, res) => {
+  try {
+    const fontDir = path.join(__dirname, "../../fonts");
+    fs.readdir(fontDir, (err, files) => {
+      if (err) return res.status(500).send("Error");
+      const fonts = files
+        .filter((f) => f.endsWith(".ttf") || f.endsWith(".woff2"))
+        .map((f) => {
+          const fontPath = path.join(fontDir, f);
+          // Đăng ký font với fontkit
+          const font = fontkit.openSync(fontPath);
+          // Kiểm tra các bảng đặc trưng của color font
+          const { tables } = font.directory;
+          const isCOLR = !!tables.COLR;
+          const isCPAL = !!tables.CPAL;
+          const isSVG = !!tables.SVG;
+          const isCBDT = !!tables.CBDT;
+
+          console.log("Font:", font.fullName);
+          console.log("Is Color Font (COLR+CPAL):", isCOLR && isCPAL);
+          console.log("Has COLR:", isCOLR);
+          console.log("Has CPAL:", isCPAL);
+          console.log("Has SVG:", isSVG);
+          console.log("Has CBDT:", isCBDT);
+
+          return {
+            name: f.replace(/\.[^/.]+$/, ""), // bỏ đuôi
+            url: `/fonts/${f}`,
+            isFontColor: isCOLR && isCPAL,
+          };
+        });
+      res.status(200).json({ fonts });
+    });
+  } catch (error) {
+    console.error("Error reading fonts directory:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 /**
  * Lấy danh sách tất cả template
@@ -136,6 +178,7 @@ const deleteTemplate = async (req, res) => {
 };
 
 module.exports = {
+  getAvailableFonts,
   getAllTemplates,
   getTemplateById,
   getDefaultTemplate,

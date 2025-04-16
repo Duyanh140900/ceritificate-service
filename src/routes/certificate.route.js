@@ -37,4 +37,11 @@ router.put(
   certificateController.revokeCertificate
 );
 
+// Route: /api/certificates/course-completed
+router.post(
+  "/course-completed",
+  authenticate,
+  certificateController.testCreateCerrificateByKafka
+);
+
 module.exports = router;

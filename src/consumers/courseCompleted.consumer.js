@@ -46,21 +46,15 @@ const initCourseCompletedConsumer = async () => {
 const processCourseCompletedEvent = async (eventData) => {
   try {
     // Xác thực dữ liệu đầu vào
-    const requiredFields = [
-      "studentId",
-      "studentName",
-      "studentEmail",
-      "courseId",
-      "courseName",
-    ];
+    const requiredFields = ["studentId", "courseId", "template"];
     for (const field of requiredFields) {
       if (!eventData[field]) {
         throw new Error(`Missing required field: ${field}`);
       }
     }
-
     // Xử lý tạo chứng chỉ
     await certificateService.processCourseCompletion(eventData);
+    // checkVaoDay();
 
     console.log(
       `Certificate processed for student: ${eventData.studentName}, course: ${eventData.courseName}`
@@ -68,6 +62,12 @@ const processCourseCompletedEvent = async (eventData) => {
   } catch (error) {
     console.error(`Error processing course completion: ${error.message}`);
   }
+};
+
+const checkVaoDay = () => {
+  const currentDate = new Date();
+  const formattedDate = currentDate.toISOString().split("T")[0];
+  console.log(`Today's date is: ${formattedDate}`);
 };
 
 module.exports = {

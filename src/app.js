@@ -25,6 +25,16 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static fonts from /fonts
+app.use(
+  "/fonts",
+  express.static(path.join(__dirname, "../fonts"), {
+    setHeaders: (res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*"); // 👈 Quan trọng cho CORS
+    },
+  })
+);
+
 // Serve static files (uploads directory)
 app.use(
   "/uploads",

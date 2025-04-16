@@ -79,10 +79,6 @@ const generateCertificateImage = async (template, data, outputPath) => {
       ctx.drawImage(backgroundImage, 0, 0, width, height);
     }
 
-    // Thiết lập font chữ từ template
-    const baseFont = template.fontFamily || "Arial";
-    console.log(`Font cơ bản: ${baseFont}`);
-
     // Ghi dữ liệu để debug
     console.log("Template fields:", template.fields);
     console.log("Data được truyền vào:", data.fieldValues);
@@ -92,6 +88,9 @@ const generateCertificateImage = async (template, data, outputPath) => {
       for (const field of template.fields) {
         // Lấy giá trị từ dữ liệu
         let value = "";
+        // Thiết lập font chữ từ template
+        const baseFont = field.fontFamily || "Arial";
+        console.log(`Font cơ bản: ${baseFont}`);
 
         if (field.name in data) {
           value = data[field.name];

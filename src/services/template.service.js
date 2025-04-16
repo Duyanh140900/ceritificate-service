@@ -8,12 +8,6 @@ const CertificateTemplate = require("../models/certificateTemplate.model");
 const createTemplate = async (templateData) => {
   try {
     // Nếu template mới được đánh dấu là mặc định, cập nhật các template khác thành không mặc định
-    if (templateData.isDefault) {
-      await CertificateTemplate.updateMany(
-        { isDefault: true },
-        { isDefault: false }
-      );
-    }
 
     const newTemplate = new CertificateTemplate(templateData);
     await newTemplate.save();

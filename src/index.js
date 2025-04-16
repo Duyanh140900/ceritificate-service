@@ -24,10 +24,10 @@ const startServer = async () => {
     await connectDB();
 
     // Kết nối Kafka
-    // await connectKafka();
+    await connectKafka();
 
     // Khởi tạo Kafka consumer
-    // await initCourseCompletedConsumer();
+    await initCourseCompletedConsumer();
 
     // Khởi động server
     const PORT = process.env.PORT || 3000;

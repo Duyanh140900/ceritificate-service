@@ -14,13 +14,17 @@ const certificateTemplateSchema = new mongoose.Schema(
     background: {
       type: String, // URL hoặc path đến hình nền
     },
-    fontFamily: {
-      type: String,
-      default: "Helvetica",
-    },
     fields: [
       {
         name: {
+          type: String,
+          required: true,
+        },
+        title: {
+          type: String,
+          required: true,
+        },
+        nameDisplay: {
           type: String,
           required: true,
         },
@@ -40,25 +44,21 @@ const certificateTemplateSchema = new mongoose.Schema(
           type: String,
           default: "#000000",
         },
+        fontFamily: {
+          type: String,
+          default: "Arial",
+        },
         textAlign: {
           type: String,
           enum: ["left", "center", "right"],
-          default: "left",
+          default: "center",
         },
-        isBold: {
-          type: Boolean,
-          default: false,
-        },
-        isItalic: {
+        isChoose: {
           type: Boolean,
           default: false,
         },
       },
     ],
-    isDefault: {
-      type: Boolean,
-      default: false,
-    },
     isActive: {
       type: Boolean,
       default: true,
