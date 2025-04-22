@@ -3,6 +3,9 @@ const path = require("path");
 const cors = require("cors");
 require("dotenv").config();
 
+// Import swagger
+const { swaggerUi, swaggerDocs } = require("./utils/swagger");
+
 // Import routes
 const templateRoutes = require("./routes/template.route");
 const certificateRoutes = require("./routes/certificate.route");
@@ -39,6 +42,13 @@ app.use(
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "..", process.env.UPLOAD_DIR))
+);
+
+// Swagger UI
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs, { explorer: true })
 );
 
 // API Routes
